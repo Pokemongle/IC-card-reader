@@ -15,21 +15,27 @@ IC card is divided into 16 sectors, each sector corresponding to 4 blocks (block
 # demo
 
 Power on, initial interface
+
 ![image.png](https://pokemongle-images-1319763739.cos.ap-nanjing.myqcloud.com/sandox/img/202309141542999.png)
 
 Key functions
+
 ![image.png](https://pokemongle-images-1319763739.cos.ap-nanjing.myqcloud.com/sandox/img/202309141543775.png)
 
 Push key1 to wake up PN532
+
 ![image.png](https://pokemongle-images-1319763739.cos.ap-nanjing.myqcloud.com/sandox/img/202309141544649.png)
 
 Successfully wake up the chip
+
 ![image.png](https://pokemongle-images-1319763739.cos.ap-nanjing.myqcloud.com/sandox/img/202309141544522.png)
 
 ![image.png](https://pokemongle-images-1319763739.cos.ap-nanjing.myqcloud.com/sandox/img/202309141545986.png)
 
 Push key2 to read infomation from the IC card
+
 ![image.png](https://pokemongle-images-1319763739.cos.ap-nanjing.myqcloud.com/sandox/img/202309141545656.png)
 
 Successfully find the card , display UID and ID (my campus card)
+
 ![image.png](https://pokemongle-images-1319763739.cos.ap-nanjing.myqcloud.com/sandox/img/202309141546092.png)
