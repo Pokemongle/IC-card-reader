@@ -1,0 +1,161 @@
+C51 COMPILER V9.01   PUBLIC                                                                07/15/2022 03:40:09 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE PUBLIC
+OBJECT MODULE PLACED IN public.obj
+COMPILER INVOKED BY: D:\C51\BIN\C51.EXE Public\public.c OMF2 BROWSE INCDIR(.\App\lcd;.\Public;.\App\keyboard;.\App\mypn5
+                    -32;.\App\UART) DEBUG PRINT(.\public.lst) OBJECT(public.obj)
+
+line level    source
+
+   1          #include<reg52.h>
+   2          #include<intrins.h>
+   3          #include"public.h"
+   4          #include"uart.h"
+   5          #include"pn532.h"
+   6          unsigned char gTimeMult;
+   7          extern unsigned char Lcdbuf1[];
+   8          extern unsigned char Lcdbuf2[];
+   9          extern unsigned char cntlcd1;
+  10          extern unsigned char cntlcd2;
+  11          //将收到的16进制码每一位变成相应的ASCII码显示在Lcd上
+  12          void hextoascii(unsigned char dat)
+  13          {
+  14   1              unsigned char DH;
+  15   1              unsigned char DL;
+  16   1              DH=dat/16;
+  17   1              DL=dat%16;
+  18   1              if(0x00<=DH&&DH<=0x09)
+  19   1              {
+  20   2                      DH='0'+DH;
+  21   2              }
+  22   1              else
+  23   1              {
+  24   2                      DH=DH-0x0A+'A';
+  25   2              }
+  26   1              if(cntlcd1>15)
+  27   1              {
+  28   2                      Lcdbuf2[cntlcd2++]=DH;  
+  29   2              }
+  30   1              else
+  31   1              {
+  32   2                      Lcdbuf1[cntlcd1++]=DH;
+  33   2              }
+  34   1              
+  35   1              if(0x00<=DL&&DL<=0x09)
+  36   1              {
+  37   2                      DL='0'+DL;
+  38   2              }
+  39   1              else
+  40   1              {
+  41   2                      DL=DL-0x0A+'A';
+  42   2              }
+  43   1              if(cntlcd1>15)
+  44   1              {
+  45   2                      Lcdbuf2[cntlcd2++]=DL;  
+  46   2              }
+  47   1              else
+  48   1              {
+  49   2                      Lcdbuf1[cntlcd1++]=DL;
+  50   2              }
+  51   1      }
+  52          
+  53          void Timer2Init(unsigned char num)              //num*25ms@11.0592MHz
+  54          {
+C51 COMPILER V9.01   PUBLIC                                                                07/15/2022 03:40:09 PAGE 2   
+
+  55   1              gTimeMult=num;
+  56   1              T2MOD = 0;              //初始化模式寄存器
+  57   1              T2CON = 0;              //初始化控制寄存器
+  58   1              ET2=0;
+  59   1              TL2 = 0x00;             //设置定时初始值
+  60   1              TH2 = 0xA6;             //设置定时初始值
+  61   1              RCAP2L = 0x00;          //设置定时重载值
+  62   1              RCAP2H = 0xA6;          //设置定时重载值
+  63   1              TR2 = 1;                //定时器2开始计时
+  64   1      }
+  65          
+  66          void ConfigUART2()
+  67          {
+  68   1              SCON = 0x50;            //8位数据,可变波特率
+  69   1              TL2 = 0xE8;             //设置定时初始值
+  70   1              TH2 = 0xFF;             //设置定时初始值
+  71   1              ET2=1;
+  72   1              TR2=1;          //定时器2开始计时
+  73   1      }
+  74          
+  75          void Timer02ms()//2ms
+  76          {
+  77   1              TMOD&=0xF0;
+  78   1              TMOD|=0x01;
+  79   1              TH0=0xF8;
+  80   1              TL0=0xCD;
+  81   1              ET0=1;
+  82   1              TR0=1;
+  83   1      }
+  84          
+  85          //T0 定时时间=num*25ms
+  86          void C51InitTimer(unsigned char num)
+  87          {
+  88   1          // AUXR |= 0xC0;//bit7->T0x12:0->12T,1->1T;bit6->T1x12:0->12T,1->1T,默认情况下是传统8051速度
+  89   1          TMOD |= 0x01;
+  90   1          TH0 = 0x4C;
+  91   1          TL0 = 0x00;      // 0x4C00=19456,(65536-19456)*12/22118400=0.025s=25ms
+  92   1          gTimeMult = num; // 25*40=1000ms=1s
+  93   1          ET0 = 1;
+  94   1          TR0 = 1;
+  95   1      }
+  96          
+  97          void ConfigUART1()
+  98          {
+  99   1              PCON &= 0x7F;           //波特率不倍速
+ 100   1              SCON = 0x50;            //8位数据,可变波特率
+ 101   1              AUXR &= 0xBF;           //定时器时钟12T模式
+ 102   1              AUXR &= 0xFE;           //串口1选择定时器1为波特率发生器
+ 103   1              TMOD &= 0x0F;           //设置定时器模式
+ 104   1              TMOD |= 0x20;           //设置定时器模式
+ 105   1              TL1 = 0xFD;             //设置定时初始值
+ 106   1              TH1 = 0xFD;             //设置定时重载值
+ 107   1              ET1 = 0;                //禁止定时器%d中断
+ 108   1              TR1 = 1;                //定时器1开始计时
+ 109   1      
+ 110   1              ES=1;
+ 111   1      }
+ 112          
+ 113          //延时n*1us函数
+ 114          void C51Delay1us(unsigned short n)
+ 115          {
+ 116   1          while (--n)
+C51 COMPILER V9.01   PUBLIC                                                                07/15/2022 03:40:09 PAGE 3   
+
+ 117   1          {
+ 118   2              _nop_();
+ 119   2              _nop_();
+ 120   2              _nop_();
+ 121   2              _nop_();
+ 122   2              _nop_();
+ 123   2          }
+ 124   1      }
+ 125          
+ 126          void C51StopTimer()
+ 127          {
+ 128   1          TR0 = 0;
+ 129   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    220    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

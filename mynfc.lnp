@@ -1,0 +1,9 @@
+"STARTUP.obj",
+"lcd.obj",
+"pn532.obj",
+"uart.obj",
+"main.obj",
+"public.obj" 
+TO "mynfc" 
+
+REMOVEUNUSED 

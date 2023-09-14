@@ -1,0 +1,338 @@
+C51 COMPILER V9.01   PN532                                                                 07/15/2022 03:40:09 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE PN532
+OBJECT MODULE PLACED IN pn532.obj
+COMPILER INVOKED BY: D:\C51\BIN\C51.EXE App\mypn532\pn532.c OMF2 BROWSE INCDIR(.\App\lcd;.\Public;.\App\keyboard;.\App\m
+                    -ypn532;.\App\UART) DEBUG PRINT(.\pn532.lst) OBJECT(pn532.obj)
+
+line level    source
+
+   1          #include<reg52.h>
+   2          #include<intrins.h>
+   3          #include"pn532.h"
+   4          #include"public.h"
+   5          #include"uart.h"
+   6          
+   7          void pn532waking()
+   8          {
+   9   1              C51Uart1SendByte(0x55);
+  10   1              C51Uart1SendByte(0x55); 
+  11   1              C51Uart1SendByte(0x00); 
+  12   1              C51Uart1SendByte(0x00); 
+  13   1              C51Uart1SendByte(0x00); 
+  14   1              C51Uart1SendByte(0x00); 
+  15   1              C51Uart1SendByte(0x00); 
+  16   1              C51Uart1SendByte(0x00); 
+  17   1              C51Uart1SendByte(0x00); 
+  18   1              C51Uart1SendByte(0x00); 
+  19   1              C51Uart1SendByte(0x00); 
+  20   1              C51Uart1SendByte(0x00); 
+  21   1              C51Uart1SendByte(0x00); 
+  22   1              C51Uart1SendByte(0x00); 
+  23   1              C51Uart1SendByte(0x00); 
+  24   1              C51Uart1SendByte(0x00); 
+  25   1              C51Uart1SendByte(0xff);
+  26   1              C51Uart1SendByte(0x03);
+  27   1              C51Uart1SendByte(0xfd);
+  28   1              C51Uart1SendByte(0xd4);
+  29   1              C51Uart1SendByte(0x14);
+  30   1              C51Uart1SendByte(0x01);
+  31   1              C51Uart1SendByte(0x17);
+  32   1              C51Uart1SendByte(0x00);                                                                 
+  33   1      }
+  34          
+  35          void pn532findcard()
+  36          {
+  37   1              C51Uart1SendByte(0x00); 
+  38   1              C51Uart1SendByte(0x00); 
+  39   1              C51Uart1SendByte(0xFF);
+  40   1              C51Uart1SendByte(0x04);
+  41   1              C51Uart1SendByte(0xFC);
+  42   1              C51Uart1SendByte(0xD4);
+  43   1              C51Uart1SendByte(0x4A);
+  44   1              C51Uart1SendByte(0x02);
+  45   1              C51Uart1SendByte(0x00);
+  46   1              C51Uart1SendByte(0xE0);
+  47   1              C51Uart1SendByte(0x00);                                                                 
+  48   1      }
+  49          
+  50          /*****************************************************************
+  51          * 函数名：  PN532SendData
+  52          * 函数功能：主控器向PN532发送数据
+  53          * 输入参数：
+  54           pBuf：需要发送给PN532的帧数据
+C51 COMPILER V9.01   PN532                                                                 07/15/2022 03:40:09 PAGE 2   
+
+  55           len： pBuf的长度
+  56          * 输出参数：
+  57                  返回是否成功标志
+  58                      成功：SUCCESS
+  59                      失败：相应的错误代码
+  60          ********************************************************************/
+  61          unsigned char PN532SendData(unsigned char *pBuf, unsigned char len)
+  62          {
+  63   1          unsigned char i;
+  64   1          for (i = 0; i < len; i++)
+  65   1          {
+  66   2              C51Uart1SendByte(pBuf[i]);
+  67   2          }
+  68   1          return ERR_NO;
+  69   1      }
+  70          
+  71          /***************************************************
+  72          * 函数名：  PN532RecvData
+  73          * 函数功能：主控器从PN532接收数据
+  74          * 输入参数：
+  75                  无
+  76          * 输出参数：
+  77                  pBuf：
+  78                      接收帧缓存
+  79                  返回是否成功标志
+  80                      成功：SUCCESS
+  81                      失败：相应的错误代码
+  82          ***************************************************/
+  83          unsigned char PN532RecvData(unsigned char *pBuf)
+  84          {
+  85   1          gTimeOutFlag = 0;
+  86   1          gUart1RecvFlag = 0;
+  87   1      
+  88   1          Timer2Init(4);
+  89   1      
+  90   1          gpPn532RxBuf = pBuf; // Start of RX buffer
+  91   1          gPn532RxLen = 6;     // Load RX byte counter
+  92   1          gi = 0;
+  93   1          while (!(gTimeOutFlag || gUart1RecvFlag))
+  94   1              ; //只要有一个为1则退出循环
+  95   1      
+  96   1          C51StopTimer();
+  97   1          if (1 == gUart1RecvFlag)
+  98   1          {
+  99   2              return ERR_NO;
+ 100   2          }
+ 101   1          else
+ 102   1          {
+ 103   2              return ERR_TIMEOUT;
+ 104   2          }
+ 105   1      }
+ 106          
+ 107          /****************************************
+ 108          * 函数名：  PN532SendAck
+ 109          * 函数功能：主控器向PN532发送ACK帧
+ 110          * 输入参数：
+ 111           无
+ 112          * 输出参数：
+ 113                  返回是否成功标志
+ 114                      成功：SUCCESS
+ 115                      失败：相应的错误代码
+ 116          *****************************************/
+C51 COMPILER V9.01   PN532                                                                 07/15/2022 03:40:09 PAGE 3   
+
+ 117          unsigned char PN532SendAck()
+ 118          {
+ 119   1          unsigned char pAckBuf[6] = {0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00};
+ 120   1          unsigned char i;
+ 121   1      
+ 122   1          for (i = 0; i < 6; i++)
+ 123   1          {
+ 124   2              C51Uart1SendByte(pAckBuf[i]);
+ 125   2          }
+ 126   1          return ERR_NO;
+ 127   1      }
+ 128          
+ 129          /***********************************************
+ 130          * 函数名：  PN532RecvAck
+ 131          * 函数功能：主控器从PN532接收ACK帧
+ 132          * 输入参数：
+ 133           无
+ 134          * 输出参数：
+ 135                  pBuf：
+ 136                      接收ACK帧缓存
+ 137                  返回是否成功标志
+ 138                      成功：SUCCESS
+ 139                      失败：相应的错误代码
+ 140          *************************************************/
+ 141          unsigned char PN532RecvAck(unsigned char *pBuf)
+ 142          {
+ 143   1          gTimeOutFlag = 0;
+ 144   1          gUart1RecvFlag = 0;
+ 145   1      
+ 146   1          Timer2Init(1);
+ 147   1      
+ 148   1          gpPn532RxBuf = pBuf; // Start of RX buffer
+ 149   1          gPn532RxLen = 6;     // Load RX byte counter
+ 150   1          gi = 0;
+ 151   1          while (!(gTimeOutFlag || gUart1RecvFlag))
+ 152   1              ; //只要有一个为1则退出循环
+ 153   1      
+ 154   1          C51StopTimer();
+ 155   1      
+ 156   1          if (1 == gUart1RecvFlag)
+ 157   1          {
+ 158   2              return ERR_NO;
+ 159   2          }
+ 160   1          else
+ 161   1          {
+ 162   2              return ERR_TIMEOUT;
+ 163   2          }
+ 164   1      }
+ 165          
+ 166          /*********************************************************************************************************
+ 167          * 函数名：  SAMConfiguration
+ 168          * 函数功能：设置PN532的内部参数
+ 169          * 输入参数：
+ 170           mode:
+ 171                0x01:normal mode
+ 172                0x02:virtual mode
+ 173                0x03:wired mode
+ 174                0x04:dual mode
+ 175           timeout:
+ 176                0x00:不使用timeout
+ 177                0x01-0xFF：超时值
+ 178           irq:
+C51 COMPILER V9.01   PN532                                                                 07/15/2022 03:40:09 PAGE 4   
+
+ 179                0x00：不使用P70_IRQ
+ 180                0x01：使用P70_IRQ
+ 181          * 输出参数：
+ 182           成功：ERR_NO
+ 183                  失败：ERR_RECVACK，ERR_RECVDATA
+ 184          * 输入输出参数：
+ 185                  pRfBuf：输入，用于存放输入参数的缓存，从外部传入，用于解决在函数内部定义过大的数组问题
+ 186                          输出，存放从PN532接收的结果
+ 187          **********************************************************************************************************
+             -/
+ 188          unsigned char SAMConfiguration(unsigned char *pRfBuf, unsigned char mode, unsigned char timeout, unsigned 
+             -char irq)
+ 189          {
+ 190   1          unsigned char temp;
+ 191   1          unsigned char s;
+ 192   1          pRfBuf[0] = 0x00; //前导码
+ 193   1          pRfBuf[1] = 0x00; //包开始标志2个字节
+ 194   1          pRfBuf[2] = 0xFF;
+ 195   1          pRfBuf[3] = 3 + 1 + 1; // len + 1字节的PD0 + 1字节的TFI
+ 196   1          pRfBuf[4] = 0x100 - pRfBuf[3];
+ 197   1          pRfBuf[5] = 0xD4; //方向标示
+ 198   1          temp = pRfBuf[5];
+ 199   1          pRfBuf[6] = 0x14; //命令码
+ 200   1          temp += pRfBuf[6];
+ 201   1          pRfBuf[7] = mode;
+ 202   1          temp += pRfBuf[7];
+ 203   1          pRfBuf[8] = timeout;
+ 204   1          temp += pRfBuf[8];
+ 205   1          pRfBuf[9] = irq;
+ 206   1          temp += pRfBuf[9];
+ 207   1      
+ 208   1          pRfBuf[10] = 0x100 - temp; // DCS
+ 209   1          pRfBuf[11] = 0x00;
+ 210   1      
+ 211   1      
+ 212   1          //底层发送函数
+ 213   1          s = PN532SendData(pRfBuf, 12);
+ 214   1          if (s != ERR_NO)
+ 215   1          {
+ 216   2              return ERR_SENDDATA;
+ 217   2          }
+ 218   1          s = PN532RecvAck(pRfBuf);
+ 219   1          if (s != ERR_NO)
+ 220   1          {
+ 221   2              return ERR_RECVACK;
+ 222   2          }
+ 223   1          s = PN532RecvData(pRfBuf);
+ 224   1          if (s != ERR_NO)
+ 225   1          {
+ 226   2              return ERR_RECVDATA;
+ 227   2          }
+ 228   1      
+ 229   1          return ERR_NO;
+ 230   1      }
+ 231          
+ 232          /****************************************************************************************
+ 233          * 函数名：  InListPassiveTarget
+ 234          * 函数功能：PN532检测卡
+ 235          * 输入参数：
+ 236           maxTag:
+ 237                      PN532最大初始化卡的个数，PN532一次只能同时处理2张卡
+ 238           brty:
+C51 COMPILER V9.01   PN532                                                                 07/15/2022 03:40:09 PAGE 5   
+
+ 239                      0x00 : 106 kbps type A (ISO/IEC14443 Type A),
+ 240                      0x01 : 212 kbps (FeliCa polling),
+ 241                      0x02 : 424 kbps (FeliCa polling),
+ 242                      0x03 : 106 kbps type B (ISO/IEC14443-3B),
+ 243                      0x04 : 106 kbps Innovision Jewel tag.
+ 244                  pData:
+ 245          * 输出参数：
+ 246           成功：ERR_NO
+ 247                  失败：ERR_RECVACK，ERR_RECVDATA
+ 248          * 输入输出参数：
+ 249                  pRfBuf：输入，用于存放输入参数的缓存，从外部传入，用于解决在函数内部定义过大的数组问题
+ 250                          输出，存放从PN532接收的结果
+ 251          *****************************************************************************************/
+ 252          unsigned char InListPassiveTarget(unsigned char *pRfBuf, unsigned char maxTag, unsigned char brty,
+ 253                                            unsigned char *pData, unsigned char len)
+ 254          {
+ 255   1          unsigned char i, temp;
+ 256   1          unsigned char s;
+ 257   1          pRfBuf[0] = 0x00; //前导码
+ 258   1          pRfBuf[1] = 0x00; //包开始标志2个字节
+ 259   1          pRfBuf[2] = 0xFF;
+ 260   1          pRfBuf[3] = len + 1 + 1 + 1 + 1; // len + 1字节的maxTag + 1字节的brty + 1字节的PD0 + 1字节的TFI
+ 261   1          pRfBuf[4] = 0x100 - pRfBuf[3];
+ 262   1          pRfBuf[5] = 0xD4; //方向标示
+ 263   1          temp = pRfBuf[5];
+ 264   1          pRfBuf[6] = 0x4A; //命令码
+ 265   1          temp += pRfBuf[6];
+ 266   1          pRfBuf[7] = maxTag;
+ 267   1          temp += pRfBuf[7];
+ 268   1          pRfBuf[8] = brty;
+ 269   1          temp += pRfBuf[8];
+ 270   1      
+ 271   1          for (i = 0; i < len; i++)
+ 272   1          {
+ 273   2              pRfBuf[9 + i] = pData[i];
+ 274   2              temp += pData[i];
+ 275   2          }
+ 276   1      
+ 277   1          pRfBuf[9 + i] = 0x100 - temp; // DCS
+ 278   1          pRfBuf[9 + i + 1] = 0x00;
+ 279   1      
+ 280   1          //底层发送函数
+ 281   1          s = PN532SendData(pRfBuf, 9 + i + 1 + 1);
+ 282   1          if (s != ERR_NO)
+ 283   1          {
+ 284   2              return ERR_SENDDATA;
+ 285   2          }
+ 286   1          s = PN532RecvAck(pRfBuf);
+ 287   1          if (s != ERR_NO)
+ 288   1          {
+ 289   2              return ERR_RECVACK;
+ 290   2          }
+ 291   1          s = PN532RecvData(pRfBuf);
+ 292   1          if (s != ERR_NO)
+ 293   1          {
+ 294   2              return ERR_RECVDATA;
+ 295   2          }
+ 296   1      
+ 297   1          return ERR_NO;
+ 298   1      }
+
+
+C51 COMPILER V9.01   PN532                                                                 07/15/2022 03:40:09 PAGE 6   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    851    ----
+   CONSTANT SIZE    =      6    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      35
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,153 @@
+C51 COMPILER V9.01   I2C                                                                   07/13/2022 12:26:28 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE I2C
+OBJECT MODULE PLACED IN I2C.obj
+COMPILER INVOKED BY: D:\C51\BIN\C51.EXE App\I2C\I2C.c OMF2 BROWSE INCDIR(.\App\lcd;.\Public;.\App\I2C;.\App\UART;.\App\k
+                    -eyboard;.\App\mypn532) DEBUG PRINT(.\I2C.lst) OBJECT(I2C.obj)
+
+line level    source
+
+   1          #include<reg52.h>
+   2          #include<intrins.h>
+   3          #include"I2C.h"
+   4          
+   5          bit I2CAddressing(unsigned char addr)
+   6          {
+   7   1              bit ack;
+   8   1              I2CStart();
+   9   1              ack=I2CWrite(addr<<1);
+  10   1              I2CStop();
+  11   1              return ack;
+  12   1      }
+  13          
+  14          bit I2CWrite(unsigned char dat)
+  15          {
+  16   1              bit ack;
+  17   1              unsigned char mask;
+  18   1              for(mask=0x80;mask!=0;mask>>=1)
+  19   1              {
+  20   2                      if((mask&dat)==0)
+  21   2                      {
+  22   3                              I2C_SDA=0;
+  23   3                      }
+  24   2                      else
+  25   2                      {
+  26   3                              I2C_SDA=1;
+  27   3                      }
+  28   2                      I2C_Delay();
+  29   2                      I2C_SCL=1;
+  30   2                      I2C_Delay();
+  31   2                      I2C_SCL=0;
+  32   2              }
+  33   1              I2C_SDA=1;
+  34   1              I2C_Delay();
+  35   1              I2C_SCL=1;
+  36   1              ack=I2C_SDA;
+  37   1              I2C_Delay();
+  38   1              I2C_SCL=0;
+  39   1              return ~ack;//0=不存在或忙或写入失败，1=存在且空闲或写入成功
+  40   1      }
+  41          
+  42          void I2CStop()
+  43          {
+  44   1              I2C_SCL=0;
+  45   1              I2C_SDA=0;
+  46   1              I2C_Delay();
+  47   1              I2C_SCL=1;
+  48   1              I2C_Delay();
+  49   1              I2C_SDA=1;
+  50   1              I2C_Delay();
+  51   1      }
+  52          
+  53          void I2CStart()
+  54          {
+C51 COMPILER V9.01   I2C                                                                   07/13/2022 12:26:28 PAGE 2   
+
+  55   1              I2C_SDA=1;
+  56   1              I2C_SCL=1;
+  57   1              I2C_Delay();
+  58   1              I2C_SDA=0;
+  59   1              I2C_Delay();
+  60   1              I2C_SCL=0;
+  61   1      }
+  62          
+  63          unsigned char I2CReadNAK()
+  64          {
+  65   1              unsigned char mask;
+  66   1              unsigned char dat;
+  67   1      
+  68   1              I2C_SDA=1;
+  69   1              for(mask=0x80;mask!=0;mask>>=1)
+  70   1              {
+  71   2                      I2C_Delay();
+  72   2                      I2C_SCL=1;
+  73   2                      if(I2C_SDA==0)
+  74   2                      {
+  75   3                              dat&=~mask;
+  76   3                      }
+  77   2                      else
+  78   2                      {
+  79   3                              dat|=mask;
+  80   3                      }
+  81   2                      I2C_Delay();
+  82   2                      I2C_SCL=0;
+  83   2              }
+  84   1              I2C_SDA=1;
+  85   1              I2C_Delay();
+  86   1              I2C_SCL=1;
+  87   1              I2C_Delay();
+  88   1              I2C_SCL=0;
+  89   1              return dat;
+  90   1      }
+  91          
+  92          unsigned char I2CReadACK()
+  93          {
+  94   1              unsigned char mask;
+  95   1              unsigned char dat;
+  96   1      
+  97   1              I2C_SDA=1;
+  98   1              for(mask=0x80;mask!=0;mask>>1)
+  99   1              {
+ 100   2                      I2C_Delay();
+ 101   2                      I2C_SCL=1;
+ 102   2                      if(I2C_SDA==0)
+ 103   2                      {
+ 104   3                              dat&=~mask;
+ 105   3                      }
+ 106   2                      else
+ 107   2                      {
+ 108   3                              dat|=mask;
+ 109   3                      }
+ 110   2                      I2C_Delay();
+ 111   2                      I2C_SCL=0;
+ 112   2              }
+ 113   1              I2C_SDA=0;
+ 114   1              I2C_Delay();
+ 115   1              I2C_SCL=1;
+ 116   1              I2C_Delay();
+C51 COMPILER V9.01   I2C                                                                   07/13/2022 12:26:28 PAGE 3   
+
+ 117   1              I2C_SCL=0;
+ 118   1      
+ 119   1              return dat;
+ 120   1      }
+ 121          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    228    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       2
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

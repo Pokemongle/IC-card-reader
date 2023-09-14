@@ -1,0 +1,29 @@
+C51 COMPILER V9.01   KEYBOARD                                                              07/14/2022 00:35:00 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE KEYBOARD
+OBJECT MODULE PLACED IN keyboard.obj
+COMPILER INVOKED BY: D:\C51\BIN\C51.EXE App\keyboard\keyboard.c OMF2 BROWSE INCDIR(.\App\lcd;.\Public;.\App\I2C;.\App\UA
+                    -RT;.\App\keyboard;.\App\mypn532) DEBUG PRINT(.\keyboard.lst) OBJECT(keyboard.obj)
+
+line level    source
+
+   1          #include<reg52.h>
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
